@@ -1,9 +1,13 @@
 [package]
-authors = ["Fabio Kleis <fabiohkrc@gmail.com>"]
 name = "rpdf"
 version = "0.1.0"
 edition = "2021"
- 
+authors = ["Fabio Kleis <fabiohkrc@gmail.com>"]
+description = "Rust cli to convert images to pdf"
+readme = "README.md"
+repository = "https://github.com/fabiokleis/rpdf/"
+license = "MIT"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
