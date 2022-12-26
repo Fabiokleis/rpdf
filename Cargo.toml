@@ -8,4 +8,4 @@ edition = "2021"
 
 [dependencies]
 clap = "4.0.32"
-printpdf = "0.5.3"
+printpdf = { version = "0.5.3", features = ["embedded_images"] }
