@@ -1,0 +1,15 @@
+[package]
+name = "gui"
+version = "0.1.0"
+edition = "2021"
+authors = ["Fabio Kleis <fabiohkrc@gmail.com>"]
+description = "cross-platform gui to rpdf"
+readme = "README.md"
+repository = "https://github.com/fabiokleis/rpdf/"
+license = "MIT"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+convert = { path = "../convert" }
+fltk = "1.3.25"

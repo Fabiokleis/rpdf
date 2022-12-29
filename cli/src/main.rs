@@ -1,11 +1,8 @@
 extern crate clap;
-extern crate printpdf;
 use clap::{arg, Command};
 
-mod conf;
-mod convert;
-use conf::Conf;
-use convert::Convert;
+#[allow(dead_code)]
+use convert::{Convert, conf::Conf};
 
 fn cli() -> Command {
     Command::new("rpdf")
@@ -25,6 +22,7 @@ fn cli() -> Command {
         )
 }
 
+#[allow(dead_code, unused_assignments)]
 fn main() -> Result<(), String> {
     let mut config = Conf::default();
     let matches = cli().get_matches();

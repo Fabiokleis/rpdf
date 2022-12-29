@@ -1,7 +1,10 @@
+extern crate printpdf;
 use printpdf::*;
 use image_crate::codecs::{jpeg::JpegDecoder, png::PngDecoder};
 use std::{path::Path, fs::File, io::BufWriter};
-use crate::conf;
+
+#[allow(dead_code)]
+pub mod conf;
 
 #[derive(Debug, Clone)]
 pub struct Convert {
