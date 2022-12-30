@@ -1,6 +1,12 @@
 extern crate fltk;
 use fltk::{
-    app::{self, Sender, Scheme}, group::Pack, menu::{MenuButton, MenuFlag}, enums::{Event, Key, Shortcut}, prelude::*, window::Window, image::SharedImage
+    prelude::*,
+    app::{self, Sender, Scheme}, 
+    group::Pack, menu::{Choice, MenuFlag},
+    enums::{Event, Key, Shortcut},
+    window::Window,
+    image::SharedImage, button,
+    dialog::{NativeFileChooser, NativeFileChooserType}
 };
 
 /// Supported actions
@@ -80,22 +86,36 @@ pub struct RpdfApp {
     imgs: Option<SharedImage>,
     themes_dd: MyDropDownList,
     pdf_sizes_dd: MyDropDownList,
+    input_btn: MyButton,
 }
 
 struct MyDropDownList {
-    dd_list: MenuButton,
+    dd_list: Choice,
 }
 
+struct MyButton {
+    btn: button::Button,
+}
+
+impl MyButton {
+    fn new<F: FnMut(&mut button::Button) + 'static>(label: String, cb: F) -> MyButton {
+        let mut btn = button::Button::default()
+            .with_size(0, 30)
+            .with_label(label.as_str());
+        btn.set_callback(cb);
+        MyButton { btn }
+    }
+}
 
 impl MyDropDownList {
     fn new(label: String, choices: String, choice_message: Message, sender: &Sender<Message>) -> Self {
-        let mut dd_list = MenuButton::default().with_size(0, 30).with_label(label.as_str());
+        let mut dd_list = Choice::default().with_size(0, 30).with_label(label.as_str());
         choices.split("|").for_each(|opt| {
             dd_list.add_choice(opt);
             let variant: Message = match choice_message {
-                Message::Theme(th) => { Themes::get_variant(opt.to_string()) },
-                Message::FileOperation(fopt) => { FileOperations::get_variant(opt.to_string()) },
-                Message::PdfSize(ps) => { PdfSizes::get_variant(opt.to_string()) },
+                Message::Theme(_) => { Themes::get_variant(opt.to_string()) },
+                Message::FileOperation(_) => { FileOperations::get_variant(opt.to_string()) },
+                Message::PdfSize(_) => { PdfSizes::get_variant(opt.to_string()) },
                 _ => { Message::None }
             };
             dd_list.add_emit(opt, Shortcut::None, MenuFlag::Normal, sender.clone(), variant);
@@ -115,11 +135,11 @@ impl RpdfApp {
             .center_screen()
             .with_label("Rpdf");
 
-        let mut pack = Pack::new(15, 45, 150, 450 - 45, "config");
+        let mut pack = Pack::new(100, 45, 150, 450 - 45, "");
         pack.set_spacing(10);
         // available themes
         let themes_dd = MyDropDownList::new(
-            "Themes".to_string(), 
+            "App Theme".to_string(), 
             "Gtk|Plastic|Gleam|Oxy".to_string(),
             Message::Theme(Themes::Gtk),
             &s
@@ -127,12 +147,17 @@ impl RpdfApp {
 
         // available pdf sizes
         let pdf_sizes_dd = MyDropDownList::new(
-            "PDF sizes".to_string(),
+            "PDF size".to_string(),
             "A2|A3|A4|A5|ImgSize".to_string(),
             Message::PdfSize(PdfSizes::A4),
             &s
         );
        
+        let input_btn = MyButton::new("@fileopen  Upload image".to_string(), 
+            move |bt| {
+                bt.emit(s, Message::FileOperation(FileOperations::Upload));
+            }
+        );
 
         pack.end();
         main_win.make_resizable(true);
@@ -153,8 +178,8 @@ impl RpdfApp {
             r,
             imgs,
             themes_dd,
-            pdf_sizes_dd
-
+            pdf_sizes_dd,
+            input_btn,
         }
     }
 
@@ -178,10 +203,16 @@ impl RpdfApp {
                     },
                     Message::FileOperation(fopt) => match fopt {
                         FileOperations::Upload => {
+                            println!("upload file call back!");
+                            let mut dialog = NativeFileChooser::new(NativeFileChooserType::BrowseFile);
+                            dialog.show();
+                            println!("{:#?}", dialog.filename());
                         },
                         FileOperations::Convert => {
+                            println!("convert file call back!");
                         },
                         FileOperations::Save => {
+                            println!("save file call back!");
                         },
                     },
                     Message::PdfSize(ps) => match ps {
