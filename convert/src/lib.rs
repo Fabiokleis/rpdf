@@ -85,7 +85,7 @@ fn load_and_write_img(path: String, current_layer: PdfLayerReference, ft: ImgExt
     }
 }
 
-fn verify_paths(paths: &Vec<String>) -> Option<Vec<String>>{
+pub fn verify_paths(paths: &Vec<String>) -> Option<Vec<String>>{
     let exists: Vec<String> = paths.iter().filter(|p| {
         Path::new(&p).exists()
     }).map(|p| p.to_string()).collect();
