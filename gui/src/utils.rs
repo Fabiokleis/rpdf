@@ -1,7 +1,10 @@
-pub const W_WIDTH: usize = 720;
-pub const W_HEIGHT: usize = 480;
-pub const IMAGE_WIDTH: usize = 100;
-pub const IMAGE_HEIGTH: usize = 200;
+pub const W_WIDTH: i32 = 800;
+pub const W_HEIGHT: i32 = 640;
+pub const P_HEIGHT: i32 = 260;
+pub const IMAGE_WIDTH: i32 = 250;
+pub const IMAGE_HEIGTH: i32 = 140;
+pub const IMAGE_PAD: i32 = 10;
+pub const IMAGE_MARGIN: i32 = 10;
 
 /// Supported actions
 #[derive(Clone, Copy)]

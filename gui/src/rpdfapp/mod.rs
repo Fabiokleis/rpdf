@@ -1,6 +1,6 @@
 use fltk::{
     prelude::*,
-    frame,
+    frame::{self, Frame},
     app::{self, Sender, Scheme}, 
     group::{Pack, Flex, FlexType}, menu::{Choice, MenuFlag, SysMenuBar},
     enums::{Color, Event, Key, Shortcut, FrameType},
@@ -10,10 +10,10 @@ use fltk::{
 };
 
 use std::{rc::Rc, cell::RefCell};
-use crate::utils::{W_WIDTH, W_HEIGHT, Message, FileOperations, Themes, PdfSizes};
+use crate::utils::{W_WIDTH, W_HEIGHT, P_HEIGHT, IMAGE_WIDTH, IMAGE_HEIGTH, IMAGE_PAD, IMAGE_MARGIN, Message, FileOperations, Themes, PdfSizes};
 
 mod components;
-use components::{MyMenu, MyDropDownList, MyButton, PreviewSection, ButtonSection};
+use components::{MyMenu, MyDropDownList, InputButton, PreviewSection, ButtonSection};
 
 fn main_menu(sys_menu: &mut MyMenu, s: &Sender<Message>) {
     sys_menu.add_emit("&Theme/Gtk".to_string(), Shortcut::None, MenuFlag::Normal, &s, Message::Theme(Themes::Gtk));
@@ -49,7 +49,7 @@ pub struct RpdfApp {
     app_flex: Flex,
     p_section: PreviewSection,
     b_section: ButtonSection,
-    image_paths: Rc<RefCell<Vec<String>>>,
+    input_button: InputButton,
 }
 
 impl RpdfApp {
@@ -57,42 +57,25 @@ impl RpdfApp {
         let app = app::App::default().with_scheme(Scheme::Base);
         let (s, r) = app::channel::<Message>();
         let mut main_win = Window::default()
-            .with_size(W_WIDTH as i32, W_HEIGHT as i32)
+            .with_size(W_WIDTH, W_HEIGHT)
             .center_screen()
             .with_label("Rpdf");
 
         main_win.set_color(Color::from_rgb(255, 255, 255));
-        let image_paths: Vec<String> = vec![];
-        let image_paths = Rc::from(RefCell::from(vec![]));
 
         let mut sys_menu = MyMenu::new();
-        // set available themes
         main_menu(&mut sys_menu, &s);
-        let mut app_flex = Flex::new(0, 45, W_WIDTH as i32, W_HEIGHT as i32, "").column();
+        let mut app_flex = Flex::new(0, 45, W_WIDTH, W_HEIGHT - 45, "").column();
 
-        let mut p_section = PreviewSection::new(&mut app_flex, 220, 10, 10);
-        //preview_panel(&mut p_section, &s);
-        //p_section.add_image("/home/urameshi/Documents/rpdf/assets/poster33.jpg".to_string(), 140, 240, 10, 10);
-        //p_section.add_image("/home/urameshi/Documents/rpdf/assets/puffy_vs_cthulhu.jpg".to_string(), 140, 240, 10, 10);
-
+        let mut p_section = PreviewSection::new(&mut app_flex, P_HEIGHT, 0, 10);
+        
         p_section.end();
         
-        let mut b_section = ButtonSection::new(&mut app_flex, 30, 10, 10);
-        b_section.create_button(
-            "@fileopen Open image".to_string(),
-            140,
-            move |bt| {
-                bt.emit(s, Message::FileOperation(FileOperations::Upload));
-                let mut dialog = NativeFileChooser::new(NativeFileChooserType::BrowseMultiFile);
-                dialog.show();
-                for p in dialog.filenames().iter() {
-                    let a = p.to_string_lossy().to_string();
-                    if ! image_paths.borrow().contains(&a) {
-                        image_paths.borrow_mut().push(a);
-                    }
-                }
-            }
-        );
+        let mut b_section = ButtonSection::new(&mut app_flex, 50, 10, 10);
+        let mut input_button = b_section.create_input_button("@fileopen Open image".to_string(), 140);
+        input_button.emit(s, Message::FileOperation(FileOperations::Upload));
+        let mut convert_button = b_section.create_button("Convert images".to_string(), 140);
+        convert_button.emit(s, Message::FileOperation(FileOperations::Convert));
 
         b_section.end();
 
@@ -100,7 +83,7 @@ impl RpdfApp {
         app_flex.end();
         
         main_win.make_resizable(true);
-        main_win.size_range(W_WIDTH as i32, W_HEIGHT as i32, 0, 0);
+        //main_win.size_range(W_WIDTH, W_HEIGHT, 0, 0);
         main_win.end();
         main_win.show();
 
@@ -118,7 +101,23 @@ impl RpdfApp {
             app_flex,
             p_section,
             b_section,
-            image_paths,
+            input_button,
+        }
+    }
+
+    fn open_files_dialog(&mut self) {
+        let mut dialog = NativeFileChooser::new(NativeFileChooserType::BrowseMultiFile);
+        dialog.set_filter("*.{png,jpg}");
+        dialog.show();
+        for p in dialog.filenames().iter() {
+            let path = p.to_string_lossy().to_string();
+            if ! self.input_button.get_paths().contains(&path) {
+                self.input_button.add_path(path.clone());
+                self.p_section.begin();
+                self.p_section.add_image(path, IMAGE_WIDTH, IMAGE_HEIGTH, IMAGE_PAD, IMAGE_MARGIN);
+                self.p_section.end();
+                self.p_section.redraw();
+            }
         }
     }
 
@@ -142,11 +141,10 @@ impl RpdfApp {
                     },
                     Message::FileOperation(fopt) => match fopt {
                         FileOperations::Upload => {
-                            //   
-                            println!("{:#?}", self.image_paths);
+                            self.open_files_dialog();
                         },
                         FileOperations::Convert => {
-                            todo!()
+                            todo!("pass image paths to convert lib then create a handler to save on output name")
                         },
                         FileOperations::Save => {
                             todo!()

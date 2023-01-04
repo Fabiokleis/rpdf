@@ -2,11 +2,12 @@ use fltk::{
     prelude::*,
     app::{self, Sender, Scheme}, 
     group::{Pack, Flex, FlexType}, menu::{Choice, MenuFlag, SysMenuBar},
-    enums::{Color, Event, Key, Shortcut, FrameType, self},
+    enums::{Color, Event, Key, Shortcut, FrameType, self, Align},
     button,
+    draw,
     window::Window,
     image::{self, SharedImage},
-    dialog::{self, NativeFileChooser, NativeFileChooserType, HelpDialog}, frame::{Frame, self}
+    dialog::{self, NativeFileChooser, NativeFileChooserType, HelpDialog}, frame::{Frame, self}, widget::Widget
 };
 use crate::utils::{W_WIDTH, W_HEIGHT, Message, FileOperations, Themes, PdfSizes, IMAGE_WIDTH, IMAGE_HEIGTH};
 
@@ -18,7 +19,7 @@ impl MyMenu {
     pub fn new() -> Self {
         let mut menu = SysMenuBar::default().with_size(800, 35);
         menu.set_frame(FrameType::FlatBox);
-        menu.set_color(Color::from_rgb(235, 235, 235));
+        menu.set_color(Color::from_rgb(200, 200, 200));
 
         MyMenu {
             menu
@@ -65,38 +66,52 @@ impl<M: MenuExt> MyDropDownList<M> {
     }
 }
 
-pub struct MyButton {
+#[derive(Clone)]
+pub struct InputButton {
     btn: button::Button,
+    image_paths: Vec<String>,
+}
+
+impl InputButton {
+    pub fn new(parent: &mut Flex, label: String, w: i32) -> InputButton {
+        let btn = button::Button::default()
+            .with_label(label.as_str());
+        parent.add(&btn);
+        parent.set_size(&btn, w);
+        InputButton { 
+            btn,
+            image_paths: vec![],
+        }
+    }
+
+    pub fn emit(&mut self, sender: Sender<Message>, message: Message) {
+        self.btn.emit(sender, message);
+    }
+
+    pub fn get_paths(&self) -> &Vec<String> {
+        &self.image_paths        
+    }
+
+    pub fn add_path(&mut self, path: String) {
+        self.image_paths.push(path);
+    }
 }
 
 pub struct ButtonSection {
     flex: Flex,
 }
 
-pub struct PreviewSection {
-    flex: Flex,
-}
-
-impl MyButton {
-    pub fn new<F: FnMut(&mut button::Button) + 'static>(parent: &mut Flex, label: String, w: i32, cb: F) -> MyButton {
-        let mut btn = button::Button::default()
-            .with_label(label.as_str());
-        
-        btn.set_callback(cb);
-        parent.set_size(&btn, w);
-        MyButton { 
-            btn,
-        }
-    }
-}
-
 impl ButtonSection {
     pub fn new(parent: &mut Flex, w: i32, pad: i32, margin: i32) -> Self {
-        let flex = Flex::default().row();
-        parent.set_size(&flex, w);
-        parent.set_pad(pad);
+        let mut flex = Flex::default().row();
+        flex.set_pad(pad);
+        flex.set_margin(margin);
+        flex.set_frame(FrameType::FlatBox);
+        flex.set_color(Color::from_rgb(200, 200, 200));
         parent.set_margin(margin);
-        
+        parent.add(&flex);
+        parent.set_size(&flex, w);
+       
         ButtonSection {
             flex,
         }
@@ -106,9 +121,23 @@ impl ButtonSection {
         self.flex.end();
     }
 
-    pub fn create_button<F: FnMut(&mut button::Button) + 'static>(&mut self, label: String, w: i32, cb: F) {
-        MyButton::new(&mut self.flex, label, w, cb);
+    pub fn create_button(&mut self, label: String, w: i32) -> button::Button {
+        let b = button::Button::default()
+            .with_pos(self.flex.x(), self.flex.y())
+            .with_size(w, self.flex.h())
+            .with_label(label.as_str());
+
+        self.flex.set_size(&b, w);
+        b
     }
+
+    pub fn create_input_button(&mut self, label: String, w: i32) -> InputButton {
+        InputButton::new(&mut self.flex, label, w)
+    }
+}
+
+pub struct PreviewSection {
+    flex: Flex,
 }
 
 impl PreviewSection {
@@ -116,16 +145,27 @@ impl PreviewSection {
         let mut flex = Flex::default()
             .with_label("Preview Section")
             .row();
+        
         flex.set_frame(FrameType::FlatBox);
-        flex.set_color(Color::from_rgb(235, 235, 235));
-        
-        parent.set_size(&flex, w);
-        parent.set_pad(pad);
+        flex.set_color(Color::from_rgb(230, 230, 240));
+
+        flex.set_pad(pad);
         parent.set_margin(margin);
-        
+
+        parent.add(&flex);
+        parent.set_size(&flex, w);
+
         PreviewSection {
             flex,
         }
+    }
+
+    pub fn redraw(&mut self) {
+        self.flex.redraw();
+    }
+
+    pub fn begin(&mut self) {
+        self.flex.begin();
     }
 
     pub fn end(&mut self) {
@@ -136,8 +176,8 @@ impl PreviewSection {
         &mut self.flex
     }
 
-    pub fn add_image(&mut self, path: String, w: i32, h: i32, pad: i32, margin: i32) {
-        ImageItem::new(&mut self.flex, path, w, h, pad, margin);
+    pub fn add_image(&mut self, path: String, w: i32, h: i32, pad: i32, margin: i32) -> ImageItem {
+        ImageItem::new(&mut self.flex, path, w, h, pad, margin)
     }
 }
 
@@ -152,15 +192,15 @@ impl ImageItem {
     pub fn new(parent: &mut Flex, path: String, w: i32, h: i32, pad: i32, margin: i32) -> Self {
         let mut frame = Frame::default().with_size(w, h); 
         let mut img = SharedImage::load(path).unwrap();
-        
+        frame.set_align(Align::Bottom | Align::Inside);
+       
         frame.draw(move |f| {
-            img.scale(f.w(), f.h(), true, true);
-            img.draw(f.x(), f.y(), f.w(), f.h());
+            img.scale(w, h, true, true);
+            img.draw(f.x(), f.y(), w, h);
         });
+           
 
-        parent.set_size(&frame, w);
-        parent.set_pad(pad);
-        parent.set_margin(margin);
+        parent.add(&frame);
 
         ImageItem {
             frame,
