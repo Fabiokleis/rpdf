@@ -21,16 +21,14 @@ pub enum Message {
 #[derive(Clone, Copy)]
 pub enum FileOperations {
     Upload,
-    Convert,
-    Save,
+    ConvertAndSave,
 }
 
 impl FileOperations {
     pub fn get_variant(e_v: String) -> Message {
         match e_v.as_str() {
             "Upload" => Message::FileOperation(FileOperations::Upload),
-            "Convert" => Message::FileOperation(FileOperations::Convert),
-            "Save" => Message::FileOperation(FileOperations::Save),
+            "Convert" => Message::FileOperation(FileOperations::ConvertAndSave),
             _ => Message::None,
         }
     }

@@ -95,6 +95,18 @@ impl InputButton {
     pub fn add_path(&mut self, path: String) {
         self.image_paths.push(path);
     }
+
+    pub fn clean_images(&mut self) -> bool {
+        if self.image_paths.is_empty() {
+            return false;
+        }
+        self.image_paths.clear();
+        true
+    }
+
+    pub fn send(&mut self) {
+        self.btn.do_callback();
+    } 
 }
 
 pub struct ButtonSection {
@@ -133,6 +145,10 @@ impl ButtonSection {
 
     pub fn create_input_button(&mut self, label: String, w: i32) -> InputButton {
         InputButton::new(&mut self.flex, label, w)
+    }
+
+    pub fn flex(&mut self) -> &mut Flex {
+        &mut self.flex
     }
 }
 
@@ -179,6 +195,7 @@ impl PreviewSection {
     pub fn add_image(&mut self, path: String, w: i32, h: i32, pad: i32, margin: i32) -> ImageItem {
         ImageItem::new(&mut self.flex, path, w, h, pad, margin)
     }
+    
 }
 
 type ImageWrapp = Option<SharedImage>;

@@ -1,3 +1,4 @@
+use convert::{Convert, conf::Conf};
 use fltk::{
     prelude::*,
     frame::{self, Frame},
@@ -39,6 +40,12 @@ fn main_menu(sys_menu: &mut MyMenu, s: &Sender<Message>) {
 //    );
 //}
 
+pub fn center() -> (i32, i32) {
+    (
+        (app::screen_size().0 / 2.0) as i32,
+        (app::screen_size().1 / 2.0) as i32,
+    )
+}
 
 
 pub struct RpdfApp {
@@ -54,7 +61,7 @@ pub struct RpdfApp {
 
 impl RpdfApp {
     pub fn new() -> Self {
-        let app = app::App::default().with_scheme(Scheme::Base);
+        let app = app::App::default().with_scheme(Scheme::Gtk);
         let (s, r) = app::channel::<Message>();
         let mut main_win = Window::default()
             .with_size(W_WIDTH, W_HEIGHT)
@@ -74,8 +81,9 @@ impl RpdfApp {
         let mut b_section = ButtonSection::new(&mut app_flex, 50, 10, 10);
         let mut input_button = b_section.create_input_button("@fileopen Open image".to_string(), 140);
         input_button.emit(s, Message::FileOperation(FileOperations::Upload));
-        let mut convert_button = b_section.create_button("Convert images".to_string(), 140);
-        convert_button.emit(s, Message::FileOperation(FileOperations::Convert));
+        let mut convert_button = b_section.create_button("@filenew Convert and save images".to_string(), 200);
+        convert_button.emit(s, Message::FileOperation(FileOperations::ConvertAndSave));
+        convert_button.deactivate();
 
         b_section.end();
 
@@ -105,20 +113,63 @@ impl RpdfApp {
         }
     }
 
-    fn open_files_dialog(&mut self) {
+    fn open_files_dialog(&mut self) -> Result<bool, String> {
         let mut dialog = NativeFileChooser::new(NativeFileChooserType::BrowseMultiFile);
         dialog.set_filter("*.{png,jpg}");
         dialog.show();
-        for p in dialog.filenames().iter() {
-            let path = p.to_string_lossy().to_string();
-            if ! self.input_button.get_paths().contains(&path) {
+        let file_names: Vec<String> = dialog.filenames().iter().map(|p| p.to_string_lossy().to_string()).collect();
+        if file_names.is_empty() {
+            dialog::message_title("Choose file");
+            dialog::alert(center().0 - 200, center().1 - 100, "Please choose a file!");
+            return Ok(false);
+        }
+        
+        for path in file_names.iter() {
+            if ! self.input_button.get_paths().contains(&path.clone()) {
                 self.input_button.add_path(path.clone());
                 self.p_section.begin();
-                self.p_section.add_image(path, IMAGE_WIDTH, IMAGE_HEIGTH, IMAGE_PAD, IMAGE_MARGIN);
+                self.p_section.add_image(path.to_string(), IMAGE_WIDTH, IMAGE_HEIGTH, IMAGE_PAD, IMAGE_MARGIN);
                 self.p_section.end();
                 self.p_section.redraw();
             }
         }
+
+        Ok(true)
+    }
+
+    fn convert_and_save(&mut self) -> Result<bool, String> {
+        let mut dlg = dialog::FileDialog::new(dialog::FileDialogType::BrowseSaveFile);
+        dlg.set_option(dialog::FileDialogOptions::SaveAsConfirm);
+        dlg.show();
+        let out = dlg.filename().to_string_lossy().to_string();
+        if out.is_empty() {
+            dialog::message_title("Choose save file");
+            dialog::alert(center().0 - 200, center().1 - 100, "Please specify a file!");
+            return Ok(false);
+        }
+
+        self.p_section.flex().deactivate();
+        self.b_section.flex().deactivate();
+        let images = self.input_button.get_paths().clone();
+        let config = Conf::from_images(images, out);
+        let cvrt = Convert::new(config);
+        self.clean_preview_section()?;
+        cvrt.save_to_pdf()?;
+
+        self.p_section.flex().activate();
+        self.b_section.flex().activate();
+        self.b_section.flex().child(1).unwrap().deactivate();
+        Ok(true)
+    }
+
+    fn clean_preview_section(&mut self) -> Result<bool, String> {
+        if ! self.input_button.clean_images() {
+            dialog::alert(center().0 - 200, center().1 - 100, "No image in preview section!");
+            return Ok(false);
+        }
+        self.p_section.flex().clear();
+        
+        Ok(true)
     }
 
     pub fn launch(&mut self) {
@@ -141,13 +192,12 @@ impl RpdfApp {
                     },
                     Message::FileOperation(fopt) => match fopt {
                         FileOperations::Upload => {
-                            self.open_files_dialog();
+                            if self.open_files_dialog().unwrap() {
+                                self.b_section.flex().child(1).unwrap().activate();
+                            }
                         },
-                        FileOperations::Convert => {
-                            todo!("pass image paths to convert lib then create a handler to save on output name")
-                        },
-                        FileOperations::Save => {
-                            todo!()
+                        FileOperations::ConvertAndSave => {
+                            self.convert_and_save();
                         },
                     },
                     Message::PdfSize(ps) => match ps {
@@ -168,13 +218,26 @@ impl RpdfApp {
                         }
                     },
                     Message::About => {
-                        todo!()
+                        dialog::message_title("About");
+                        dialog::message(center().0 - 200, center().1 - 100, "About dialog");
                     },
                     Message::Help => {
-                        todo!()
+                        dialog::message_title("Help");
+                        dialog::message(center().0 - 200, center().1 - 100, "About dialog");
                     },
                     Message::Quit => {
-                        self.app.quit();
+                        if self.input_button.get_paths().is_empty() {
+                            self.app.quit();
+                        } else {
+                            match dialog::choice2_default("Would you like to convert and save", "No", "Yes", "Cancel") {
+                                Some(1) => self.b_section.flex().child(1).unwrap().do_callback(),
+                                Some(0) => self.app.quit(),
+                                Some(2) => {},
+                                None => {},
+                                _ => {}
+                            }
+                             
+                        }
                     },
                     Message::None => todo!() 
                 }
