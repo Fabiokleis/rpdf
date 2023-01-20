@@ -1,15 +1,12 @@
 use fltk::{
     prelude::*,
-    app::{self, Sender, Scheme}, 
-    group::{Pack, Flex, FlexType}, menu::{Choice, MenuFlag, SysMenuBar},
-    enums::{Color, Event, Key, Shortcut, FrameType, self, Align},
+    app::{Sender}, 
+    group::{Flex}, menu::{MenuFlag, SysMenuBar},
+    enums::{Color, Shortcut, FrameType, Align},
     button,
-    draw,
-    window::Window,
-    image::{self, SharedImage},
-    dialog::{self, NativeFileChooser, NativeFileChooserType, HelpDialog}, frame::{Frame, self}, widget::Widget
+    image::{SharedImage}, frame::{Frame}
 };
-use crate::utils::{W_WIDTH, W_HEIGHT, Message, FileOperations, Themes, PdfSizes, IMAGE_WIDTH, IMAGE_HEIGTH};
+use crate::utils::{Message, FileOperations, Themes, PdfSizes};
 
 pub struct MyMenu {
     menu: SysMenuBar,
@@ -29,7 +26,7 @@ impl MyMenu {
     pub fn add_emit(&mut self, name: String, shortcut: Shortcut, flag: MenuFlag, sender: &Sender<Message>, message: Message) {
         let variant: Message = match message {
             Message::Theme(_) => {
-                let sufx = name.split("/").nth(1).unwrap();
+                let sufx = name.split('/').nth(1).unwrap();
                 Themes::get_variant(sufx.to_string())
             },
             Message::About => Message::About,
@@ -37,7 +34,7 @@ impl MyMenu {
             Message::Quit => Message::Quit,
             _ => Message::None,
         };
-        self.menu.add_emit(name.as_str(), shortcut, flag, sender.clone(), variant);
+        self.menu.add_emit(name.as_str(), shortcut, flag, *sender, variant);
     }
 }
 
@@ -48,7 +45,7 @@ pub struct MyDropDownList<M: MenuExt> {
 impl<M: MenuExt> MyDropDownList<M> {
     pub fn new(parent: &mut Flex, label: String, choices: String, choice_message: Message, sender: &Sender<Message>, menu: M) -> Self {
         let mut dd_list = menu.with_label(label.as_str());
-        choices.split("|").for_each(|opt| {
+        choices.split('|').for_each(|opt| {
             dd_list.add_choice(opt);
             let variant: Message = match choice_message {
                 Message::Theme(_) => Themes::get_variant(opt.to_string()),
@@ -56,7 +53,7 @@ impl<M: MenuExt> MyDropDownList<M> {
                 Message::PdfSize(_) => PdfSizes::get_variant(opt.to_string()),
                 _ => Message::None
             };
-            dd_list.add_emit(opt, Shortcut::None, MenuFlag::Normal, sender.clone(), variant);
+            dd_list.add_emit(opt, Shortcut::None, MenuFlag::Normal, *sender, variant);
             parent.set_size(&dd_list, 120);
         });
         //parent.set_size(&dd_list, 80);
@@ -206,7 +203,7 @@ pub struct ImageItem {
 }
 
 impl ImageItem {
-    pub fn new(parent: &mut Flex, path: String, w: i32, h: i32, pad: i32, margin: i32) -> Self {
+    pub fn new(parent: &mut Flex, path: String, w: i32, h: i32, _pad: i32, _margin: i32) -> Self {
         let mut frame = Frame::default().with_size(w, h); 
         let mut img = SharedImage::load(path).unwrap();
         frame.set_align(Align::Bottom | Align::Inside);

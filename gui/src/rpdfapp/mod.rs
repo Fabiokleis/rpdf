@@ -1,30 +1,34 @@
 use convert::{Convert, conf::Conf};
 use fltk::{
     prelude::*,
-    frame::{self, Frame},
     app::{self, Sender, Scheme}, 
-    group::{Pack, Flex, FlexType}, menu::{Choice, MenuFlag, SysMenuBar},
-    enums::{Color, Event, Key, Shortcut, FrameType},
+    group::{Flex}, menu::{MenuFlag},
+    enums::{Color, Event, Key, Shortcut},
     window::Window,
-    image::SharedImage, button,
-    dialog::{self, NativeFileChooser, NativeFileChooserType, HelpDialog}
+    dialog::{self, NativeFileChooser, NativeFileChooserType}
 };
 
 use crate::utils::{W_WIDTH, W_HEIGHT, P_HEIGHT, IMAGE_WIDTH, IMAGE_HEIGTH, IMAGE_PAD, IMAGE_MARGIN, Message, FileOperations, Themes, PdfSizes};
 
 mod components;
-use components::{MyMenu, MyDropDownList, InputButton, PreviewSection, ButtonSection};
+use components::{MyMenu, InputButton, PreviewSection, ButtonSection};
+
+
+const ABOUT_DIALOG_MESSAGE: &'static str = "About Rpdf project\n
+Rpdf github repository at <https://github.com/Fabiokleis/rpdf>\n
+Please give a star!!\n
+License MIT";
 
 fn main_menu(sys_menu: &mut MyMenu, s: &Sender<Message>) {
-    sys_menu.add_emit("&Theme/Gtk".to_string(), Shortcut::None, MenuFlag::Normal, &s, Message::Theme(Themes::Gtk));
-    sys_menu.add_emit("&Theme/Plastic".to_string(), Shortcut::None, MenuFlag::Normal, &s, Message::Theme(Themes::Plastic));
-    sys_menu.add_emit("&Theme/Gleam".to_string(), Shortcut::None, MenuFlag::Normal, &s, Message::Theme(Themes::Gleam));
-    sys_menu.add_emit("&Theme/Oxy".to_string(), Shortcut::None, MenuFlag::Normal, &s, Message::Theme(Themes::Oxy));
+    sys_menu.add_emit("&Theme/Gtk".to_string(), Shortcut::None, MenuFlag::Normal, s, Message::Theme(Themes::Gtk));
+    sys_menu.add_emit("&Theme/Plastic".to_string(), Shortcut::None, MenuFlag::Normal, s, Message::Theme(Themes::Plastic));
+    sys_menu.add_emit("&Theme/Gleam".to_string(), Shortcut::None, MenuFlag::Normal, s, Message::Theme(Themes::Gleam));
+    sys_menu.add_emit("&Theme/Oxy".to_string(), Shortcut::None, MenuFlag::Normal, s, Message::Theme(Themes::Oxy));
 
     // actions
-    sys_menu.add_emit("&About".to_string(), Shortcut::from_char('a'), MenuFlag::Normal, &s, Message::About);
-    sys_menu.add_emit("&Help".to_string(), Shortcut::from_char('h'), MenuFlag::Normal, &s, Message::Help);
-    sys_menu.add_emit("&Quit".to_string(), Shortcut::from_char('q'), MenuFlag::Normal, &s, Message::Quit);
+    sys_menu.add_emit("&About".to_string(), Shortcut::from_char('a'), MenuFlag::Normal, s, Message::About);
+    sys_menu.add_emit("&Help".to_string(), Shortcut::from_char('h'), MenuFlag::Normal, s, Message::Help);
+    sys_menu.add_emit("&Quit".to_string(), Shortcut::from_char('q'), MenuFlag::Normal, s, Message::Quit);
 }
 
 
@@ -128,8 +132,8 @@ impl RpdfApp {
         if file_names.len() == 1 {
             file_names = file_names.get(0)
                 .expect("could not find the image path inside file names!")
-                .split("|").map(|p| p.to_string()).collect();
-            println!("{:#?}", file_names);
+                .split('|').map(|p| p.to_string()).collect();
+            println!("{file_names:#?}");
         }
         
         for path in file_names.iter() {
@@ -225,11 +229,11 @@ impl RpdfApp {
                     },
                     Message::About => {
                         dialog::message_title("About");
-                        dialog::message(center().0 - 200, center().1 - 100, "About dialog");
+                        dialog::message(center().0 - 200, center().1 - 100, ABOUT_DIALOG_MESSAGE);
                     },
                     Message::Help => {
                         dialog::message_title("Help");
-                        dialog::message(center().0 - 200, center().1 - 100, "Help dialog");
+                        dialog::message(center().0 - 200, center().1 - 100, ABOUT_DIALOG_MESSAGE);
                     },
                     Message::Quit => {
                         if self.input_button.get_paths().is_empty() {
