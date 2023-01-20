@@ -10,7 +10,6 @@ use fltk::{
     dialog::{self, NativeFileChooser, NativeFileChooserType, HelpDialog}
 };
 
-use std::{rc::Rc, cell::RefCell};
 use crate::utils::{W_WIDTH, W_HEIGHT, P_HEIGHT, IMAGE_WIDTH, IMAGE_HEIGTH, IMAGE_PAD, IMAGE_MARGIN, Message, FileOperations, Themes, PdfSizes};
 
 mod components;
@@ -112,16 +111,25 @@ impl RpdfApp {
             input_button,
         }
     }
-
     fn open_files_dialog(&mut self) -> Result<bool, String> {
         let mut dialog = NativeFileChooser::new(NativeFileChooserType::BrowseMultiFile);
         dialog.set_filter("*.{png,jpg}");
         dialog.show();
-        let file_names: Vec<String> = dialog.filenames().iter().map(|p| p.to_string_lossy().to_string()).collect();
+
+        let mut file_names: Vec<String> = vec![];
+        file_names = dialog.filenames().iter().map(|p| p.to_string_lossy().to_string()).collect();
+        
         if file_names.is_empty() {
             dialog::message_title("Choose file");
             dialog::alert(center().0 - 200, center().1 - 100, "Please choose a file!");
             return Ok(false);
+        }
+
+        if file_names.len() == 1 {
+            file_names = file_names.get(0)
+                .expect("could not find the image path inside file names!")
+                .split("|").map(|p| p.to_string()).collect();
+            println!("{:#?}", file_names);
         }
         
         for path in file_names.iter() {
@@ -148,16 +156,12 @@ impl RpdfApp {
             return Ok(false);
         }
 
-        self.p_section.flex().deactivate();
-        self.b_section.flex().deactivate();
         let images = self.input_button.get_paths().clone();
         let config = Conf::from_images(images, out);
         let cvrt = Convert::new(config);
         self.clean_preview_section()?;
         cvrt.save_to_pdf()?;
 
-        self.p_section.flex().activate();
-        self.b_section.flex().activate();
         self.b_section.flex().child(1).unwrap().deactivate();
         Ok(true)
     }
@@ -197,7 +201,9 @@ impl RpdfApp {
                             }
                         },
                         FileOperations::ConvertAndSave => {
+                            self.main_win.deactivate();
                             self.convert_and_save();
+                            self.main_win.activate();
                         },
                     },
                     Message::PdfSize(ps) => match ps {
@@ -223,7 +229,7 @@ impl RpdfApp {
                     },
                     Message::Help => {
                         dialog::message_title("Help");
-                        dialog::message(center().0 - 200, center().1 - 100, "About dialog");
+                        dialog::message(center().0 - 200, center().1 - 100, "Help dialog");
                     },
                     Message::Quit => {
                         if self.input_button.get_paths().is_empty() {
