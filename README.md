@@ -56,6 +56,15 @@ To create a cross-platform gui [fltk](https://github.com/fltk-rs/fltk-rs)
 - GUI Translations
 - Best appearence
 
+## Contributing
+
+Thank you for wanting to contribute to the Rpdf project!
+
+Starts opening a issue and let's your suggestions, create pull a request.
+Please consider to follow a clear way to write issue/pr.
+
+All contributions are welcome!
+
 ## License
 
 MIT
