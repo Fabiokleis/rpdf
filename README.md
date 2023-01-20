@@ -1,5 +1,5 @@
 # rpdf
-Rust cli/gui to convert images to pdf.
+Rust cross-platform cli/gui to convert images to pdf.
 
 ## Workspaces
 The project was divided in 3 workspace members,
@@ -48,6 +48,13 @@ To create a cli app [clap](https://github.com/clap-rs/clap)
 
 To create a cross-platform gui [fltk](https://github.com/fltk-rs/fltk-rs)
 
+## GUI Version 0.1 - Next features
+- Custom pdf size, A1, A2, A3, A4 ... etc.
+- Drag and drop images in preview section
+- Status bar at the bottom
+- Support merge with pdfs
+- GUI Translations
+- Best appearence
 
 ## License
 
