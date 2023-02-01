@@ -1,3 +1,4 @@
+#![windows_subsystem = "windows"]
 mod utils;
 mod rpdfapp;
 use rpdfapp::RpdfApp;
