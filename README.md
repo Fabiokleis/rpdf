@@ -1,5 +1,6 @@
-# rpdf
+# Rpdf
 Rust cross-platform cli/gui to convert images to pdf.
+Please access [lastest Release](https://github.com/Fabiokleis/rpdf/releases/tag/v0.1.0)
 
 ## Workspaces
 The project was divided in 3 workspace members,
@@ -50,7 +51,6 @@ To create a cross-platform gui [fltk](https://github.com/fltk-rs/fltk-rs)
 
 ## GUI Version 0.1 screenshot on Linux
 ![image](https://user-images.githubusercontent.com/66813406/217687414-552ee1bc-6b6b-4bea-9438-712023f01686.png)
-
 
 ## GUI Version 0.1 - Next features
 - Custom pdf size, A1, A2, A3, A4 ... etc.
