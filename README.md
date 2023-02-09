@@ -48,6 +48,10 @@ To create a cli app [clap](https://github.com/clap-rs/clap)
 
 To create a cross-platform gui [fltk](https://github.com/fltk-rs/fltk-rs)
 
+## GUI Version 0.1 screenshot on Linux
+![image](https://user-images.githubusercontent.com/66813406/217687414-552ee1bc-6b6b-4bea-9438-712023f01686.png)
+
+
 ## GUI Version 0.1 - Next features
 - Custom pdf size, A1, A2, A3, A4 ... etc.
 - Drag and drop images in preview section
