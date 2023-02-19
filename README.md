@@ -1,6 +1,6 @@
 # Rpdf
 Rust cross-platform cli/gui to convert images to pdf.
-Please access [lastest Release](https://github.com/Fabiokleis/rpdf/releases/tag/v0.1.0)
+Please access [latest Release](https://github.com/Fabiokleis/rpdf/releases/tag/v0.1.0)
 
 ## Workspaces
 The project was divided in 3 workspace members,
